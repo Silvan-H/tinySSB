@@ -252,30 +252,31 @@ async function getImg() {
     let identifier = null;
     switch(currentMode) {
         case "svg":
-            if (!cache.svg) break;
-            buf = new ArrayBuffer(bipf_encodingLength(cache.svg));
-            e = bipf_encode(cache.svg, buf, 0);
-            identifier = 'data:image/svg+bipf;base64,';
-        break;
-        case "png":
-            buf = new ArrayBuffer(bipf_encodingLength(cache.png));
-            e = bipf_encode(cache.png, buf, 0);
+            if (!cache.svg.finalSVG) break;
+            identifier = 'data:image/svg+xml;base64,';
+            return identifier + btoa(finalSVG);
+        case "png": {
+            const pngDataUrl = canvas.toDataURL('image/png');
+            const pngBase64 = pngDataUrl.split(',')[1];
+            const pngBinary = atob(pngBase64);
+            const pngBytes = new Uint8Array(pngBinary.length);
+            for (let i = 0; i < pngBinary.length; i++) {
+                pngBytes[i] = pngBinary.charCodeAt(i);
+            }
+            const compressed = pako.deflate(pngBytes);
+
+            let binary = '';
+            for (let i = 0; i < compressed.length; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const compressedBase64 = btoa(binary);
+
             identifier = 'data:image/png;base64,';
-        break;
+            return identifier + compressedBase64;
+        }
         default:
             return null;
-        break;
     }
-
-    var binary = '';
-    var bytes = new Uint8Array(buf);
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
-       binary += String.fromCharCode(bytes[i]);
-    }
-
-    let shortenedDataURL = identifier + btoa(binary);
-    return shortenedDataURL
 }
 
 async function chat_sendImg() {

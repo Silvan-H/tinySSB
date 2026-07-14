@@ -265,6 +265,10 @@ function load_post_item(p) { // { 'key', 'from', 'when', 'body', 'to' (if group 
             box += `<img src="${src}"`;
             box += 'alt="Drawing" width="100%">';
             txt = "";
+        } else if (txt.startsWith("data:image/svg+xml;base64")) {
+            const src = txt;
+            box += `<img src="${src}" alt="SVG" width="100%">`;
+            txt = "";
         }
 
         var re = /!\[.*?\]\((.*?)\)/g;
