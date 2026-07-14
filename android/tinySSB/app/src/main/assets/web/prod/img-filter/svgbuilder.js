@@ -1,6 +1,7 @@
 let CURVE_TOLERANCE = null;
 const svgSizeText = document.getElementById("svg-size");
 let finalSVG = null;
+let payloadSVG = null;
 
 function build_svg(componentPoints, curveTolerance) {
     CURVE_TOLERANCE = curveTolerance;
@@ -25,10 +26,10 @@ function build_svg(componentPoints, curveTolerance) {
      */
 
     const encodedSvg = encode_svg(svg);
-    const encodedSvgSize = byteSize(encodedSvg);
-    mainSizeText.textContent = `${(encodedSvgSize / 1024).toFixed(1)} KB (${((encodedSvgSize / originalSize) * 100).toFixed(1)} %)`
-
-    finalSVG = encodedSvg;
+    size = byteSize(encodedSvg);
+    mainSizeText.textContent = `${(size / 1024).toFixed(1)} KB (${((size / originalSize) * 100).toFixed(1)} %)`;
+    finalSVG = svg;
+    payloadSVG = encodedSvg;
     return svg;
 }
 

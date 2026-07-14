@@ -19,7 +19,7 @@ Each path is an ordered polyline of edge points.
 Multiple paths per component represent separate boundaries including holes.
 Rendering uses evenodd fill rule to interpret them correctly.
 */
-function marching_squares(imageData) {
+async function marching_squares(imageData) {
     if (!connected_components) {
         return null;
     }
@@ -63,7 +63,7 @@ function marching_squares(imageData) {
     }
 
     draw_contours(componentContours, ctx);
-    set_size_text(mainSizeText, canvas);
+    await set_size_text(mainSizeText, canvas);
 
     return componentContours;
 }

@@ -49,11 +49,11 @@ async function menu_take_picture() {
     backend('get:camera');
 }
 
-function applyFilter(filter, params) {
+async function applyFilter(filter, params) {
     if (!imageData) return;
 
     imageData = filter(imageData, params);
-    set_size_text(mainSizeText, canvas);
+    await set_size_text(mainSizeText, canvas);
     render(imageData);
 
     if (currentState === STATE.INITIAL) {
@@ -65,10 +65,10 @@ function applyFilter(filter, params) {
         cache.custom = saveState();
     }
 }
-function applyMarchingSquares() {
+async function applyMarchingSquares() {
     if (!imageData) return;
 
-    componentPoints = marching_squares(imageData);
+    componentPoints = await marching_squares(imageData);
 
     currentState = STATE.AFTER_MARCHING;
     updateButtonStates();
@@ -104,7 +104,12 @@ function generateSVG(curveTolerance){
         svgString = build_svg(simplifiedComponentPoints, curveTolerance);
     }
 
-    canvas.innerHTML = svgString;
+    const img = new Image();
+    img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(svgString);
 
     currentState = STATE.AFTER_SVG;
     updateButtonStates();
@@ -122,13 +127,15 @@ async function resetImage() {
 }
 
 function saveState() {
-    return {
+    return structuredClone({
         imageData,
         componentPoints,
         simplifiedComponentPoints,
         finalSVG,
+        payloadSVG,
+        size,
         currentState,
-    };
+    });
 }
 
 function restoreState(state) {
@@ -136,12 +143,30 @@ function restoreState(state) {
     componentPoints = state.componentPoints;
     simplifiedComponentPoints = state.simplifiedComponentPoints;
     finalSVG = state.finalSVG;
+    payloadSVG = state.payloadSVG;
+    size = state.size;
     currentState = state.currentState;
 
     canvas.width = imageData.width;
     canvas.height = imageData.height;
-    render(imageData);
-    set_size_text(mainSizeText, canvas);
+
+    if (finalSVG) {
+        const img = new Image();
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = "data:image/svg+xml;base64," + btoa(finalSVG);
+    } else if (simplifiedComponentPoints) {
+        draw_contours(simplifiedComponentPoints, ctx);
+    } else if (componentPoints) {
+        draw_contours(componentPoints,ctx);
+    } else {
+        render(imageData);
+    }
+
+    set_size_text_cached(mainSizeText, size);
+
     updateButtonStates();
 }
 
@@ -167,7 +192,7 @@ async function apply_preset_filters() {
     const maxIterations = 10;
 
     for (let i = 0; i < maxIterations; i++) {
-        applyFilter(bilateral_blur, [3, 40, 7]);
+        await applyFilter(bilateral_blur, [3, 40, 7]);
 
         const currentSize = await getCanvasFileSize(canvas);
 
@@ -185,9 +210,9 @@ async function apply_preset_filters() {
 
         previousSize = currentSize;
     }
-    applyFilter(quantize_color, [4]);
-    applyFilter(merge_small_components, [10]);
-    applyMarchingSquares();
+    await applyFilter(quantize_color, [4]);
+    await applyFilter(merge_small_components, [10]);
+    await applyMarchingSquares();
     applyCountourSimplification(3);
     generateSVG(2.0);
 }
@@ -248,11 +273,11 @@ async function getImg() {
     switch(currentMode) {
         case "svg": {
             if (!cache.svg.finalSVG) break;
-            return cache.svg.finalSVG;
+            return cache.svg.payloadSVG;
         }
         case "custom": {
             if (!cache.custom.finalSVG) break;
-            return cache.custom.finalSVG;
+            return cache.custom.payloadSVG;
         }
         default:
             return null;

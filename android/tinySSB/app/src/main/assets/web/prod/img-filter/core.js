@@ -5,6 +5,7 @@ const mainSizeText = document.getElementById("image-size-display");
 let imageData = null;
 let componentPoints = null;
 let simplifiedComponentPoints = null;
+let size = null;
 
 async function loadImg(maxScale) {
 
@@ -37,6 +38,8 @@ async function loadImg(maxScale) {
             componentPoints = null;
             simplifiedComponentPoints = null;
             finalSVG = null;
+            payloadSVG = null;
+            size = null;
 
             currentState = STATE.INITIAL;
             updateButtonStates();
@@ -101,7 +104,11 @@ function getCanvasFileSize(canvas, type = "image/png") {
     });
 }
 async function set_size_text(text, canvas) {
-    const size = await getCanvasFileSize(canvas);
+    size = await getCanvasFileSize(canvas);
+    text.textContent = `${(size / 1024).toFixed(1)} KB (${((size / originalSize) * 100).toFixed(1)} %)`;
+}
+
+function set_size_text_cached(text, size) {
     text.textContent = `${(size / 1024).toFixed(1)} KB (${((size / originalSize) * 100).toFixed(1)} %)`;
 }
 
