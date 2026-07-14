@@ -266,7 +266,20 @@ function load_post_item(p) { // { 'key', 'from', 'when', 'body', 'to' (if group 
             box += 'alt="Drawing" width="100%">';
             txt = "";
         } else if (txt.startsWith("data:image/svg+xml;base64")) {
-            const src = txt;
+            let compressedBase64 = txt.split(',')[1];
+            let compressedData = atob(compressedBase64)
+                .split('')
+                .map(char => char.charCodeAt(0));
+            let uint8Array = new Uint8Array(compressedData);
+
+            let decompressedBytes = pako.inflate(uint8Array);
+
+            let binary = '';
+            for (let i = 0; i < decompressedBytes.length; i++) {
+                binary += String.fromCharCode(decompressedBytes[i]);
+            }
+            let src = 'data:image/svg+xml;base64,' + btoa(binary);
+
             box += `<img src="${src}" alt="SVG" width="100%">`;
             txt = "";
         }

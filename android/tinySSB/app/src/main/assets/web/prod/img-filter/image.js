@@ -251,10 +251,23 @@ async function getImg() {
     let e = null;
     let identifier = null;
     switch(currentMode) {
-        case "svg":
+        case "svg": {
             if (!cache.svg.finalSVG) break;
+
+            const svgBytes = new TextEncoder().encode(cache.svg.finalSVG);
+            const compressed = pako.deflate(svgBytes);
+
+            console.log(`SVG: ${svgBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
+
+            let binary = '';
+            for (let i = 0; i < compressed.length; i++) {
+                binary += String.fromCharCode(compressed[i]);
+            }
+            const compressedBase64 = btoa(binary);
+
             identifier = 'data:image/svg+xml;base64,';
-            return identifier + btoa(finalSVG);
+            return identifier + compressedBase64;
+        }
         case "png": {
             const pngDataUrl = canvas.toDataURL('image/png');
             const pngBase64 = pngDataUrl.split(',')[1];
@@ -264,6 +277,8 @@ async function getImg() {
                 pngBytes[i] = pngBinary.charCodeAt(i);
             }
             const compressed = pako.deflate(pngBytes);
+
+            console.log(`PNG: ${pngBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
 
             let binary = '';
             for (let i = 0; i < compressed.length; i++) {
