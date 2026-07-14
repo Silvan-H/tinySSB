@@ -14,7 +14,6 @@ const STATE = {
 let currentState = STATE.INITIAL;
 
 let cache = {
-    png: null,
     svg: null,
     custom: null,
 };
@@ -31,12 +30,11 @@ async function b2f_new_image_blob(ref) {
     imgUrl = "https://appassets.androidplatform.net/blobs/" + ref;
     document.getElementById("image-filter").style.display = "flex";
 
-    await press_png();
+    await press_svg();
 }
 
 function close_image() {
     document.getElementById("image-filter").style.display = "none";
-    cache.png = null;
     cache.svg = null;
     cache.custom = null;
 }
@@ -62,9 +60,6 @@ function applyFilter(filter, params) {
         cache.custom = saveState();
     }
 }
-
-
-
 function applyMarchingSquares() {
     if (!imageData) return;
 
@@ -145,33 +140,8 @@ function restoreState(state) {
     updateButtonStates();
 }
 
-
-async function press_png() {
-    currentMode = "png";
-    document.getElementById("img-png").style.background = "var(--activeCol)";
-    document.getElementById("img-svg").style.background = "var(--passiveCol)";
-    document.getElementById("img-custom").style.background = "var(--passiveCol)";
-    document.getElementById("custom-buttons-area").style.display = "none";
-
-    if (cache.png) {
-        restoreState(cache.png);
-        return;
-    }
-
-    await loadImg(200);
-    applyFilter(gaussian_blur, []);
-    applyFilter(bilateral_blur, [3, 40, 7]);
-    applyFilter(quantize_color, [4]);
-    applyFilter(merge_small_components, [10]);
-    applyMarchingSquares();
-    applyCountourSimplification(3);
-
-    cache.png = saveState();
-}
-
 async function press_svg() {
     currentMode = "svg";
-    document.getElementById("img-png").style.background = "var(--passiveCol)";
     document.getElementById("img-svg").style.background = "var(--activeCol)";
     document.getElementById("img-custom").style.background = "var(--passiveCol)";
     document.getElementById("custom-buttons-area").style.display = "none";
@@ -195,7 +165,6 @@ async function press_svg() {
 
 async function press_custom() {
     currentMode = "custom";
-    document.getElementById("img-png").style.background = "var(--passiveCol)";
     document.getElementById("img-svg").style.background = "var(--passiveCol)";
     document.getElementById("img-custom").style.background = "var(--activeCol)";
     document.getElementById("custom-buttons-area").style.display = "flex";
@@ -247,51 +216,34 @@ function updateButtonStates() {
 }
 
 async function getImg() {
-    let buf = null;
-    let e = null;
-    let identifier = null;
     switch(currentMode) {
         case "svg": {
             if (!cache.svg.finalSVG) break;
-
-            const svgBytes = new TextEncoder().encode(cache.svg.finalSVG);
-            const compressed = pako.deflate(svgBytes);
-
-            console.log(`SVG: ${svgBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
-
-            let binary = '';
-            for (let i = 0; i < compressed.length; i++) {
-                binary += String.fromCharCode(compressed[i]);
-            }
-            const compressedBase64 = btoa(binary);
-
-            identifier = 'data:image/svg+xml;base64,';
-            return identifier + compressedBase64;
+            return encode_svg(cache.svg.finalSVG);
         }
-        case "png": {
-            const pngDataUrl = canvas.toDataURL('image/png');
-            const pngBase64 = pngDataUrl.split(',')[1];
-            const pngBinary = atob(pngBase64);
-            const pngBytes = new Uint8Array(pngBinary.length);
-            for (let i = 0; i < pngBinary.length; i++) {
-                pngBytes[i] = pngBinary.charCodeAt(i);
-            }
-            const compressed = pako.deflate(pngBytes);
-
-            console.log(`PNG: ${pngBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
-
-            let binary = '';
-            for (let i = 0; i < compressed.length; i++) {
-                binary += String.fromCharCode(compressed[i]);
-            }
-            const compressedBase64 = btoa(binary);
-
-            identifier = 'data:image/png;base64,';
-            return identifier + compressedBase64;
+        case "custom": {
+            if (!cache.custom.finalSVG) break;
+            return encode_svg(cache.custom.finalSVG);
         }
         default:
             return null;
     }
+}
+
+function encode_svg(svg) {
+    const svgBytes = new TextEncoder().encode(svg);
+    const compressed = pako.deflate(svgBytes);
+
+    console.log(`SVG: ${svgBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
+
+    let binary = '';
+    for (let i = 0; i < compressed.length; i++) {
+        binary += String.fromCharCode(compressed[i]);
+    }
+    const compressedBase64 = btoa(binary);
+
+    const identifier = 'data:image/svg+xml;base64,';
+    return identifier + compressedBase64;
 }
 
 async function chat_sendImg() {
