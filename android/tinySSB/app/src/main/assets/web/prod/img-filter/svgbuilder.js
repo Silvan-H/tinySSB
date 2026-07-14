@@ -4,25 +4,31 @@ let finalSVG = null;
 
 function build_svg(componentPoints, curveTolerance) {
     CURVE_TOLERANCE = curveTolerance;
+    /*
     for (const key in stats) delete stats[key];
     stats.saved = 0;
+    */
 
     const pairs = build_pairs(componentPoints);
     const merged = merge_consecutive(pairs);
     const paths = pairs_to_paths(merged);
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${imageData.width} ${imageData.height}" fill-rule="evenodd">${paths.join("")}</svg>`;
-
     const svgSize = byteSize(svg);
 
+    /*
     const { saved, ...counts } = stats;
     console.log("winner counts:", counts);
     console.log("total chars saved:", saved);
     console.log("bytes:", svgSize);
     console.log(svg);
-    mainSizeText.textContent = `${(svgSize / 1024).toFixed(1)} KB (${((svgSize / originalSize) * 100).toFixed(1)} %)`
+     */
 
-    finalSVG = svg;
+    const encodedSvg = encode_svg(svg);
+    const encodedSvgSize = byteSize(encodedSvg);
+    mainSizeText.textContent = `${(encodedSvgSize / 1024).toFixed(1)} KB (${((encodedSvgSize / originalSize) * 100).toFixed(1)} %)`
+
+    finalSVG = encodedSvg;
     return svg;
 }
 
@@ -79,8 +85,10 @@ function path_to_svg(path) {
 
         if (curveCandidate) {
             parts.push(curveCandidate.str);
+            /*
             stats[curveCandidate.label] = (stats[curveCandidate.label] ?? 0) + 1;
             stats.saved += curveCandidate.saved;
+             */
             i += curveCandidate.consumed;
             continue;
         }
@@ -208,14 +216,16 @@ function segment_candidates(p, dx, dy) {
     ];
 }
 
-const stats = { saved: 0 };
+// const stats = { saved: 0 };
 
 function log_candidates(candidates) {
     const sorted = [...candidates].sort((a, b) => a.str.length - b.str.length);
     const winner = sorted[0];
     const loser = sorted[sorted.length - 1];
+    /*
     stats[winner.label] = (stats[winner.label] ?? 0) + 1;
     stats.saved += loser.str.length - winner.str.length;
+     */
 }
 
 function rgbaToHex(c) {
@@ -228,6 +238,24 @@ function byteSize(str) {
     return new TextEncoder().encode(str).length;
 }
 
+function encode_svg(svg) {
+    const svgBytes = new TextEncoder().encode(svg);
+    const compressed = pako.deflate(svgBytes);
+
+    // console.log(`SVG: ${svgBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
+
+    let binary = '';
+    for (let i = 0; i < compressed.length; i++) {
+        binary += String.fromCharCode(compressed[i]);
+    }
+    const compressedBase64 = btoa(binary);
+
+    const identifier = 'data:image/svg+xml;base64,';
+
+    const payload = identifier + compressedBase64;
+    // console.log(`Final payload size: ${payload.length} bytes`);
+    return payload;
+}
 function download_svg(svg) {
     if (!svg) return;
     const blob = new Blob([svg], { type: "image/svg+xml" });

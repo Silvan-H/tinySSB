@@ -157,15 +157,39 @@ async function press_svg() {
     }
 
     await loadImg(200);
-    applyFilter(gaussian_blur, []);
-    applyFilter(bilateral_blur, [3, 40, 7]);
+    await apply_preset_filters();
+    cache.svg = saveState();
+}
+
+async function apply_preset_filters() {
+    let previousSize = await getCanvasFileSize(canvas);
+    const minReduction = 0.08;
+    const maxIterations = 10;
+
+    for (let i = 0; i < maxIterations; i++) {
+        applyFilter(bilateral_blur, [3, 40, 7]);
+
+        const currentSize = await getCanvasFileSize(canvas);
+
+        const reduction = (previousSize - currentSize) / previousSize;
+
+        /*
+        console.log(
+            `Iteration ${i + 1}: ${previousSize} -> ${currentSize} (${(reduction * 100).toFixed(2)}%)`
+        );
+        */
+
+        if (reduction < minReduction) {
+            break;
+        }
+
+        previousSize = currentSize;
+    }
     applyFilter(quantize_color, [4]);
     applyFilter(merge_small_components, [10]);
     applyMarchingSquares();
     applyCountourSimplification(3);
     generateSVG(2.0);
-
-    cache.svg = saveState();
 }
 
 async function press_custom() {
@@ -224,31 +248,15 @@ async function getImg() {
     switch(currentMode) {
         case "svg": {
             if (!cache.svg.finalSVG) break;
-            return encode_svg(cache.svg.finalSVG);
+            return cache.svg.finalSVG;
         }
         case "custom": {
             if (!cache.custom.finalSVG) break;
-            return encode_svg(cache.custom.finalSVG);
+            return cache.custom.finalSVG;
         }
         default:
             return null;
     }
-}
-
-function encode_svg(svg) {
-    const svgBytes = new TextEncoder().encode(svg);
-    const compressed = pako.deflate(svgBytes);
-
-    console.log(`SVG: ${svgBytes.length} bytes raw -> ${compressed.length} bytes compressed`);
-
-    let binary = '';
-    for (let i = 0; i < compressed.length; i++) {
-        binary += String.fromCharCode(compressed[i]);
-    }
-    const compressedBase64 = btoa(binary);
-
-    const identifier = 'data:image/svg+xml;base64,';
-    return identifier + compressedBase64;
 }
 
 async function chat_sendImg() {

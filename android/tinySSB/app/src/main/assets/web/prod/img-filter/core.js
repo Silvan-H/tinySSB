@@ -14,7 +14,7 @@ async function loadImg(maxScale) {
 
     const objectUrl = URL.createObjectURL(blob);
     const img = new Image();
-    
+
     await new Promise((resolve, reject) => {
         img.onload = () => {
             const scale = Math.min(1, maxScale / img.width, maxScale / img.height);
@@ -89,10 +89,20 @@ function count_total_points(componentPoints) {
     return total;
 }
 
-function set_size_text(text, canvas) {
-    canvas.toBlob(blob => {
-        text.textContent = `${(blob.size / 1024).toFixed(1)} KB (${((blob.size / originalSize) * 100).toFixed(1)} %)`;
+function getCanvasFileSize(canvas, type = "image/png") {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                reject(new Error("toBlob failed"));
+                return;
+            }
+            resolve(blob.size);
+        }, type);
     });
+}
+async function set_size_text(text, canvas) {
+    const size = await getCanvasFileSize(canvas);
+    text.textContent = `${(size / 1024).toFixed(1)} KB (${((size / originalSize) * 100).toFixed(1)} %)`;
 }
 
 async function getOriginalSize() {
