@@ -95,13 +95,13 @@ function applyCountourSimplification(epsilon) {
 
 }
 
-function generateSVG(){
+function generateSVG(curveTolerance){
     if (!componentPoints) return;
     let svgString;
     if(!simplifiedComponentPoints){
-        svgString = build_svg(componentPoints);
+        svgString = build_svg(componentPoints, curveTolerance);
     } else {
-        svgString = build_svg(simplifiedComponentPoints);
+        svgString = build_svg(simplifiedComponentPoints, curveTolerance);
     }
 
     canvas.innerHTML = svgString;
@@ -188,7 +188,7 @@ async function press_svg() {
     applyFilter(merge_small_components, [10]);
     applyMarchingSquares();
     applyCountourSimplification(3);
-    generateSVG();
+    generateSVG(2.0);
 
     cache.svg = saveState();
 }
@@ -248,20 +248,21 @@ function updateButtonStates() {
 
 async function getImg() {
     let buf = null;
+    let e = null;
     let identifier = null;
     switch(currentMode) {
         case "svg":
             if (!cache.svg) break;
             buf = new ArrayBuffer(bipf_encodingLength(cache.svg));
-            const e = bipf_encode(cache.svg, buf, 0);
+            e = bipf_encode(cache.svg, buf, 0);
             identifier = 'data:image/svg+bipf;base64,';
         break;
         case "png":
             buf = new ArrayBuffer(bipf_encodingLength(cache.png));
-            const e = bipf_encode(cache.png, buf, 0);
+            e = bipf_encode(cache.png, buf, 0);
             identifier = 'data:image/png;base64,';
         break;
-        case default:
+        default:
             return null;
         break;
     }
