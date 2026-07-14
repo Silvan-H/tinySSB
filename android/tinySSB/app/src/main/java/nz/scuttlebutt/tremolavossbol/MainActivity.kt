@@ -7,6 +7,8 @@ package nz.scuttlebutt.tremolavossbol
 import MyWorker
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -83,6 +85,7 @@ class MainActivity : Activity() {
     var broadcastReceiver: BroadcastReceiver? = null
     var isWifiConnected = false
     var ble_event_listener: BluetoothEventListener? = null
+    private var currentPhotoUri: Uri? = null
 
     /*
     var broadcast_socket: DatagramSocket? = null
@@ -356,11 +359,20 @@ class MainActivity : Activity() {
             }
             val ref = storeImageBlob(bitmap)
             wai.eval("b2f_new_image_blob('${ref}')")
-            /* disabled in tinyTremola
         } else if (requestCode == 1002 && resultCode == RESULT_OK) { // camera
-            val ref = tremolaState.blobStore.storeAsBlob(currentPhotoPath)
-            tremolaState.wai.eval("b2f_new_image_blob('${ref}')")
-        */
+            val uri = currentPhotoUri
+            if (uri != null) {
+                val bitmap = when {
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.P ->
+                        MediaStore.Images.Media.getBitmap(this.contentResolver, uri)
+                    else -> {
+                        val src = ImageDecoder.createSource(this.contentResolver, uri)
+                        ImageDecoder.decodeBitmap(src)
+                    }
+                }
+                val ref = storeImageBlob(bitmap)
+                wai.eval("b2f_new_image_blob('${ref}')")
+            }
         /* no file loading in tinyTremola
         } else if (requestCode == 808 && resultCode == RESULT_OK) { // voice
             val voice = "abc" // result!!.contents
@@ -636,5 +648,29 @@ class MainActivity : Activity() {
             bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
         }
         return fileName
+    }
+
+    fun takePicture() {
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), 2001)
+            return
+        }
+        val blobDir = File(filesDir, "blobs").apply { mkdirs() }
+        val photoFile = File(blobDir, "tmp_${System.currentTimeMillis()}.jpg")
+        currentPhotoUri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", photoFile)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivityForResult(intent, 1002)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 2001 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            takePicture()
+        }
     }
 }

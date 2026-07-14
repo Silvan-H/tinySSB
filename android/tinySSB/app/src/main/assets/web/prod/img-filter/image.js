@@ -44,6 +44,11 @@ async function menu_pick_image() {
     backend('get:media');
 }
 
+async function menu_take_picture() {
+    closeOverlay();
+    backend('get:camera');
+}
+
 function applyFilter(filter, params) {
     if (!imageData) return;
 

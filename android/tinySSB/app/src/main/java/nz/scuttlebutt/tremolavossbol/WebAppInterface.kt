@@ -259,7 +259,10 @@ class WebAppInterface(val act: MainActivity, val webView: WebView) {
                 act.startActivityForResult(intent, 1001)
                 return
             }
-
+            "get:camera" -> {
+                act.takePicture()
+                return
+            }
             "get:voice" -> { // get:voice
                 val intent = Intent(act, RecordActivity::class.java)
                 act.startActivityForResult(intent, 808)
