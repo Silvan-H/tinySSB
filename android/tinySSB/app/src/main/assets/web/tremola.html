@@ -17,6 +17,17 @@
   <script type="text/javascript" charset="UTF-8" src="prod/chat.js"></script>
   <script type="text/javascript" charset="UTF-8" src="prod/contacts.js"></script>
   <script type="text/javascript" charset="UTF-8" src="prod/sketch.js"></script>
+
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/core.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/image.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/blur.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/colorquantization.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/connectedcomponents.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/grayscale.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/linesimplification.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/marchingsquares.js" defer></script>
+  <script type="text/javascript" charset="UTF-8" src="prod/img-filter/svgbuilder.js" defer></script>
+
   <script type="text/javascript" charset="UTF-8" src="prod/tools.js"></script>
   <!-- script type="text/javascript" charset="UTF-8" src="prod/dpi24-14-sched/scheduling.js"></script -->
   <!-- script type="text/javascript" charset="UTF-8" src="prod/dpi24-14-sched/scheduling_ui.js"></script -->
@@ -46,7 +57,9 @@
   </div>
 
   <div id='attach-menu' class='attach-menu-overlay'>
-    <button class="attach-menu-item-button" onclick="chat_openSketch();">create sketch</button>
+    <button class="attach-menu-item-button flat buttontext" onclick="chat_openSketch();" style="width: 40px; height: 40px; background-image: url('img/pencil.svg');  background-size: 100% 100%;"></button>
+    <button class="attach-menu-item-button flat buttontext" onclick="temp();" style="width: 40px; height: 40px; background-image: url('img/camera.svg');  background-size: 100% 100%;"></button>
+    <button class="attach-menu-item-button flat buttontext" onclick="menu_pick_image();" style="width: 40px; height: 40px; background-image: url('img/card-image.svg');  background-size: 100% 100%;"></button>
     <!--
     <button class="attach-menu-item-button" onclick="menu_take_picture();">Take picture</button>
     <button class="attach-menu-item-button" onclick="menu_pick_image();">Attach file</button>
@@ -184,7 +197,7 @@
       <div id="old_contact_alias_hdr">Alias:</div>
       <div style="display: flex; margin-top: 5px;">
         <textarea rows=1 id="old_contact_alias" placeholder="Tap here to type" style="width: calc(100% - 50px); vertical-align: middle;"></textarea>
-        <button class="passive buttontext" onclick="save_content_alias();" style="background-image: url('img/checked.svg'); background-color: background-repeat: no-repeat;var(--passiveCol); margin-left: 8px; border: 0pt; height: 3em; width: 3em; vertical-align: middle;">&nbsp;</button>
+        <button class="passive buttontext" onclick="save_content_alias();" style="background-image: url('img/checked.svg'); background-repeat: no-repeat;var(--passiveCol); margin-left: 8px; border: 0pt; height: 3em; width: 3em; vertical-align: middle;">&nbsp;</button>
       </div>
       <div id=old_contact_details style='text-align: left; padding-top: 3px; display: block;'>
         &nbsp;<br><div>Shortname: &nbsp;XYS2?-?TEYX</div>
@@ -708,7 +721,7 @@
 
         <textarea id='draft' rows=3 placeholder='Tap here to type' style="padding-right: 40px;"></textarea>
         <!-- ('img/paperclip.svg') class="flat buttontext img-gray-filter" -->
-        <button id="attachmentButton" onclick="chat_open_attachments_menu()" class="flat buttontext" style="width: 40px; height: 40px; position: absolute; right: 3px; top: 5px; background-image: url('img/pencil.png'); background-color: transparent; background-size: 100% 100%;"></button>
+        <button id="attachmentButton" onclick="chat_open_attachments_menu()" class="flat buttontext" style="width: 40px; height: 40px; position: absolute; right: 3px; top: 5px; background-image: url('img/plus.svg'); background-color: transparent; background-size: 100% 100%;"></button>
       </div>
       <td height=100%><button id='btn:attach' class="flat buttontext" onclick="btnBridge(this);" style="width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/record.svg'); fill: #fff;"></button>
       <td height=100%><button id='btn:preview' class="flat passive buttontext" onclick="showPreview();" style="width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/send-button.svg'); background-size: 100% 100%;"></button>
@@ -728,6 +741,49 @@
 <canvas id="sketchCanvas" style="display: none; position: fixed; top: 0; left: 0; margin: 0px;">
   canvas is here
 </canvas>
+
+
+<div id="image-filter">
+  <header class="box-top">
+    <button class="flat buttontext backButton img-button" onclick="close_image();" style="transition: all 0.15s ease; background-color: transparent; height: 9vw; width: 13vw; margin-left: 5px; margin-top: 2px; fill: var(--strokeCol);">
+      <object type="image/svg+xml" data="img/back.svg" onload="this.replaceWith(this.contentDocument.documentElement);"></object></button>
+    <span id="image-size-display">
+    0.00 KB
+  </span>
+    <button class="flat passive buttontext img-button" onclick="void(0);" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/send.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;"></button>
+  </header>
+
+  <main class="box-middle">
+     <!-- <img id="preview-img" class="flex-image" alt=""> -->
+     <canvas id="preview-img" class="flex-image"></canvas>
+  </main>
+
+  <footer>
+    <div id="custom-buttons-area" class="custom-buttons">
+      <div class="custom-buttons-row">
+        <button id="gray-filter" class="filter-btn img-button" onclick="applyFilter(gray_scale, [])">Gray</button>
+        <button id="gaussian-blur" class="filter-btn img-button" onclick="applyFilter(gaussian_blur, [])">Gaussian Blur</button>
+        <button id="bilateral-blur" class="filter-btn img-button" onclick="applyFilter(bilateral_blur, [3, 40, 7])">Bilateral Blur</button>
+        <button id="quantize-color" class="filter-btn img-button" onclick="applyFilter(quantize_color, [4])">Quantize Color</button>
+      </div>
+      <div class="custom-buttons-row">
+        <button id="merge-components" class="filter-btn img-button" onclick="applyFilter(merge_small_components, [10])">Merge Components</button>
+        <button id="marching-squares" class="filter-btn img-button" onclick="applyMarchingSquares()">Marching Squares</button>
+        <button id="simplify-contours" class="filter-btn img-button" onclick="applyCountourSimplification(3)">Simplify Contours</button>
+        <button id="png/svg" class="filter-btn img-button" onclick="generateSVG(2.0)">SVG</button>
+        <button id="reset" class="filter-btn img-button" onclick="resetImage()">Reset</button>
+      </div>
+    </div>
+
+    <div class="box-bottom">
+      <table width=100% cellpadding="2px"><tr>
+        <td width=33.3%><button id='img-png' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_png();">PNG</button>
+        <td width=33.3%><button id='img-svg' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_svg();">SVG</button>
+        <td width=33.3%><button id='img-custom' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_custom();">Custom</button>
+      </table>
+    </div>
+  </footer>
+</div>
 
 </body>
 </html>

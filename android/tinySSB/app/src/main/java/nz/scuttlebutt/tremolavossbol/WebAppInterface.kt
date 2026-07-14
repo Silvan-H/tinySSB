@@ -254,14 +254,10 @@ class WebAppInterface(val act: MainActivity, val webView: WebView) {
                 return
             }
             "get:media" -> {
-                if (checkSelfPermission(act, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(act, "No permission to access media files",
-                        Toast.LENGTH_SHORT).show()
-                    return
-                }
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT); // , MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 intent.type = "image/*"
                 act.startActivityForResult(intent, 1001)
+                return
             }
 
             "get:voice" -> { // get:voice

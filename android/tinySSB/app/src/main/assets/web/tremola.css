@@ -341,9 +341,10 @@
 
 .attach-menu-overlay {
   display: none;
+  flex-direction: column;
   position: absolute;
-  right: 10px;
-  bottom: 70px;
+  right: 105px;
+  bottom: 80px;
   background: var(--menuBackground);
   padding: 0.5em;
   z-index: 1001; /* high z-index */
@@ -646,6 +647,119 @@ input:checked + .slider:before {
   background-color: red;
 }
 
+#image-filter {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  background-color: var(--menuBackground);
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.box-top {
+  background-color: transparent;
+  display: flex;
+  justify-content: space-between;
+}
+
+.box-middle {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.flex-image {
+  width: 90vw;
+  height: auto;
+  image-rendering: auto;
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.box-bottom {
+  height: calc(55pt - 6pt);
+  align-content: center;
+  border: 3pt inset var(--light);
+  border-radius: 2pt;
+  margin: 3pt;
+  width: calc(100% - 12pt);
+}
+
+#img-png {
+  fill: var(--strokeCol);
+  height: 46pt;
+  background-color: var(--activeCol);
+}
+
+#img-svg {
+  fill: var(--strokeCol);
+  height: 46pt;
+  background-color: var(--passiveCol);
+}
+
+#img-custom {
+  fill: var(--strokeCol);
+  height: 46pt;
+  background-color: var(--passiveCol);
+}
+
+#image-size-display {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 0 15px;
+  color: var(--fontCol);
+  font-weight: 600;
+}
+
+.image-button {
+  border-radius: 30px;
+  padding: 10px 20px;
+  background-color: var(--lightB);
+}
+
+.custom-buttons {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.custom-buttons-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.filter-btn {
+  flex: 1;
+  background-color: var(--menuBackground);
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.filter-btn:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.img-button:not(:disabled):active {
+  transform: scale(0.97);
+}
 
 
 /* eof */

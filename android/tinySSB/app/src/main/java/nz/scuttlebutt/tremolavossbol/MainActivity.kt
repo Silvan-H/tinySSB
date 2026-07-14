@@ -12,6 +12,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.graphics.ImageDecoder
+import android.provider.MediaStore
 import android.net.NetworkInfo
 import android.net.Uri
 import android.net.wifi.WifiManager
@@ -127,6 +129,7 @@ class MainActivity : Activity() {
         val webView = findViewById<WebView>(R.id.webView)
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", AssetsPathHandler(this))
+            .addPathHandler("/blobs/", WebViewAssetLoader.InternalStoragePathHandler(this, File(filesDir, "blobs")))
             .build()
         webView.webViewClient = object : WebViewClientCompat() {
             override fun shouldInterceptRequest(
@@ -340,7 +343,7 @@ class MainActivity : Activity() {
                 else -> "qr_scan_success('" + result.contents + "');"
             }
             wai.eval(cmd)
-        /* disabled in tinyTremola
+
         }  else if (requestCode == 1001 && resultCode == RESULT_OK) { // media pick
             val pictureUri = data?.data
             val bitmap = when {
@@ -351,8 +354,9 @@ class MainActivity : Activity() {
                     ImageDecoder.decodeBitmap(src)
                 }
             }
-            val ref = tremolaState.blobStore.storeAsBlob(bitmap)
-            tremolaState.wai.eval("b2f_new_image_blob('${ref}')")
+            val ref = storeImageBlob(bitmap)
+            wai.eval("b2f_new_image_blob('${ref}')")
+            /* disabled in tinyTremola
         } else if (requestCode == 1002 && resultCode == RESULT_OK) { // camera
             val ref = tremolaState.blobStore.storeAsBlob(currentPhotoPath)
             tremolaState.wai.eval("b2f_new_image_blob('${ref}')")
@@ -621,5 +625,16 @@ class MainActivity : Activity() {
         try { mc_socket?.leaveGroup(mc_group); mc_socket?.close() } catch (e: Exception) {}
         mc_group = null
         mc_socket = null
+    }
+
+    fun storeImageBlob(bitmap: android.graphics.Bitmap): String {
+        val fileName = "img_${System.currentTimeMillis()}.jpg"
+        val blobDir = File(filesDir, "blobs")
+        if (!blobDir.exists()) blobDir.mkdirs()
+        val file = File(blobDir, fileName)
+        file.outputStream().use { out ->
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+        }
+        return fileName
     }
 }
