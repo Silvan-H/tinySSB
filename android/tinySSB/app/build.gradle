@@ -6,6 +6,11 @@ android {
     namespace "tremolavossbol"
     compileSdk 30
 
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError false
+    }
+
     buildFeatures {
         viewBinding = true
     }

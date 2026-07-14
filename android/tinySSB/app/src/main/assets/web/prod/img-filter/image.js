@@ -245,3 +245,75 @@ function updateButtonStates() {
             break;
     }
 }
+
+async function getImg() {
+    let buf = null;
+    let identifier = null;
+    switch(currentMode) {
+        case "svg":
+            if (!cache.svg) break;
+            buf = new ArrayBuffer(bipf_encodingLength(cache.svg));
+            const e = bipf_encode(cache.svg, buf, 0);
+            identifier = 'data:image/svg+bipf;base64,';
+        break;
+        case "png":
+            buf = new ArrayBuffer(bipf_encodingLength(cache.png));
+            const e = bipf_encode(cache.png, buf, 0);
+            identifier = 'data:image/png;base64,';
+        break;
+        case default:
+            return null;
+        break;
+    }
+
+    var binary = '';
+    var bytes = new Uint8Array(buf);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+       binary += String.fromCharCode(bytes[i]);
+    }
+
+    let shortenedDataURL = identifier + btoa(binary);
+    return shortenedDataURL
+}
+
+async function chat_sendImg() {
+    var img = await getImg()
+    if (!img || img.length == 0)
+            return;
+
+    launch_snackbar("sending image ...")
+    setTimeout(function () { // delay sending (and getting location beforehand), allows snackbar to show
+
+        //add geolocation to message if enabled.
+        if (Android.isGeoLocationEnabled() == "true"){ //ony add if enabled
+            var plusCode = Android.getCurrentLocationAsPlusCode();
+            if (plusCode != null && plusCode.length > 0) //check if we actually received a location
+                img = "pfx:loc/plus," + plusCode + "|" + img;
+        }
+
+        // send to backend
+        var ch = tremola.chats[curr_chat]
+        if (!(ch.timeline instanceof Timeline))
+            ch.timeline = Timeline.fromJSON(ch.timeline)
+        let tips = JSON.stringify(ch.timeline.get_tips())
+        if (curr_chat == "ALL") {
+            var cmd = `publ:post ${tips} ` + btoa(img) + " null"; // + recps
+            // console.log(cmd)
+            backend(cmd);
+        } else {
+            var recps = tremola.chats[curr_chat].members.join(' ');
+            var cmd = `priv:post ${tips} ` + btoa(img) + " null " + recps;
+            backend(cmd);
+        }
+
+        closeOverlay();
+        // setTimeout(function () { // let image rendering (fetching size) take place before we scroll
+            let c = document.getElementById('core');
+            c.scrollTop = c.scrollHeight;
+        // }, 100);
+
+        // close image
+        close_image();
+    }, 100);
+}
