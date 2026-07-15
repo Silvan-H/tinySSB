@@ -5,7 +5,6 @@ const customBtn = document.getElementById("img-custom");
 
 let imgUrl = null;
 let originalSize = null;
-let resolution = 200;
 
 let grayFilter = false;
 let blurs = 0;
@@ -32,6 +31,17 @@ const BUTTONSTATE = {
     BLURD: true,
     REQUIREDF: true,
     SENDI: true,
+}
+
+let settings = {
+    MAXSCALE: 200,
+    BLURSPATIAL: 3,
+    BLURRANGE: 40,
+    BLURRADIUS: 7,
+    COLORS: 4,
+    MINCOMPONENTSIZE: 10,
+    SIMPLIFICATIONFACTOR: 3,
+    CURVETHRESHOLD: 2.0,
 }
 
 let currentState = STATE.INITIAL;
@@ -102,7 +112,7 @@ async function applyMarchingSquares() {
     }
 }
 
-function applyCountourSimplification(epsilon) {
+function applyContourSimplification(epsilon) {
     if (!componentPoints) return;
 
     simplifiedComponentPoints = simplify_contours(componentPoints, epsilon);
@@ -139,7 +149,7 @@ function generateSVG(curveTolerance){
 
 async function resetImage() {
     cache.custom = null;
-    await loadImg(resolution);
+    await loadImg(settings.MAXSCALE);
     blurs = 0;
     colorsFilter = 4;
     grayFilter = false;
@@ -158,10 +168,10 @@ async function requiredFilters() {
     isProcessing = true;
 
     try {
-        await applyFilter(merge_small_components, [10]);
+        await applyFilter(merge_small_components, [settings.MINCOMPONENTSIZE]);
         await applyMarchingSquares();
-        applyCountourSimplification(3);
-        generateSVG(2.0);
+        applyContourSimplification(settings.SIMPLIFICATIONFACTOR);
+        generateSVG(settings.CURVETHRESHOLD);
 
         BUTTONSTATE.COLORB = true;
         BUTTONSTATE.SENDI = false;
@@ -228,7 +238,7 @@ async function press_svg() {
         return;
     }
 
-    await loadImg(resolution);
+    await loadImg(settings.MAXSCALE);
     await apply_preset_filters();
     cache.svg = saveState();
 }
@@ -242,7 +252,7 @@ async function apply_preset_filters() {
     const maxIterations = 10;
 
     for (let i = 0; i < maxIterations; i++) {
-        await applyFilter(bilateral_blur, [3, 40, 7]);
+        await applyFilter(bilateral_blur, [settings.BLURSPATIAL, settings.BLURRANGE, settings.BLURRADIUS]);
 
         const currentSize = await getCanvasFileSize(canvas);
 
@@ -260,11 +270,11 @@ async function apply_preset_filters() {
 
         previousSize = currentSize;
     }
-    await applyFilter(quantize_color, [4]);
-    await applyFilter(merge_small_components, [10]);
+    await applyFilter(quantize_color, [settings.COLORS]);
+    await applyFilter(merge_small_components, [settings.MINCOMPONENTSIZE]);
     await applyMarchingSquares();
-    applyCountourSimplification(3);
-    generateSVG(2.0);
+    applyContourSimplification(settings.SIMPLIFICATIONFACTOR);
+    generateSVG(settings.CURVETHRESHOLD);
     canvas.style.display = "block";
     imgLoader.style.display = "none";
     customBtn.disabled = false;
@@ -283,7 +293,7 @@ async function press_custom() {
         return;
     }
 
-    await loadImg(resolution);
+    await loadImg(settings.MAXSCALE);
 
     cache.custom = saveState();
     updateButton();
@@ -298,7 +308,7 @@ async function stepBlur(number) {
         if (number === 1) {
             if (blurs === 10) return;
             blurHistory.push(cloneImageData(imageData));
-            await applyFilter(bilateral_blur, [3, 40, 7]);
+            await applyFilter(bilateral_blur, [settings.BLURSPATIAL, settings.BLURRANGE, settings.BLURRADIUS]);
             blurs++;
 
             BUTTONSTATE.BLURD = blurs === 10;
@@ -448,7 +458,7 @@ function updateButton() {
 }
 
 async function rebuildFromScratch() {
-    await loadImg(resolution);
+    await loadImg(settings.MAXSCALE);
     if (grayFilter) {
         await applyFilter(gray_scale, [], false);
     }
@@ -456,7 +466,7 @@ async function rebuildFromScratch() {
     blurHistory = [];
     for (let i = 0; i < blurs; i++) {
         blurHistory.push(cloneImageData(imageData));
-        await applyFilter(bilateral_blur, [3, 40, 7], false);
+        await applyFilter(bilateral_blur, [settings.BLURSPATIAL, settings.BLURRANGE, settings.BLURRADIUS], false);
     }
 
     if (currentMode === "custom") {
