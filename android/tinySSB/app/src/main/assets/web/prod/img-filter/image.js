@@ -62,6 +62,7 @@ async function b2f_new_image_blob(ref) {
 
     await press_svg();
     document.getElementById("first-filter").style.display = "flex";
+    document.getElementById("send-img").disabled = false;
 }
 
 function close_image() {
@@ -479,6 +480,7 @@ function cloneImageData(data) {
 function pressNext() {
     document.getElementById("first-filter").style.display = "none";
     document.getElementById("second-filter").style.display = "flex";
+    applyColor(colorsFilter);
 }
 
 async function apply2blurs() {
@@ -494,9 +496,14 @@ function add_settings_event_listeners() {
         document.getElementById("colors-value").textContent = e.target.value;
     });
 
-    document.getElementById("simplification-input").addEventListener("input", e => {
+    document.getElementById("simplification-input").addEventListener("change", e => {
         settings.SIMPLIFICATIONFACTOR = Number(e.target.value);
         document.getElementById("simplification-value").textContent = e.target.value;
+    });
+
+    document.getElementById("component-input").addEventListener("change", e => {
+        settings.MINCOMPONENTSIZE = Number(e.target.value);
+        document.getElementById("component-value").textContent = e.target.value;
     });
 }
 
@@ -509,7 +516,7 @@ function open_img_settings() {
 async function update_canvas() {
     if (!canvas) return;
 
-    if (currentMode == "svg") {
+    if (currentMode === "svg") {
         cache.svg = null;
         await loadImg(settings.MAXSCALE);
         await apply_preset_filters();
