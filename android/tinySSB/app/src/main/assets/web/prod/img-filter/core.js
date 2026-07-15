@@ -42,7 +42,6 @@ async function loadImg(maxScale) {
             size = null;
 
             currentState = STATE.INITIAL;
-            updateButtonStates();
 
             resolve();
         };

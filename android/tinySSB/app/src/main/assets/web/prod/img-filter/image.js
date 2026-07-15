@@ -2,6 +2,17 @@
 
 let imgUrl = null;
 let originalSize = null;
+let resolution = 200;
+
+let grayFilter = false;
+let blurs = 0;
+let colorsFilter = 4;
+
+let isProcessing = false;
+
+let blurHistory = [];
+let imgWithoutCF = null;
+let imgWithoutCFSet = false;
 
 const STATE = {
     INITIAL: "initial",
@@ -10,6 +21,15 @@ const STATE = {
     AFTER_SIMPLIFY: "after_simplify",
     AFTER_SVG: "after_svg",
 };
+
+const BUTTONSTATE = {
+    COLORB: true,
+    GRAYB: false,
+    BLURU: false,
+    BLURD: true,
+    REQUIREDF: true,
+    SENDI: true,
+}
 
 let currentState = STATE.INITIAL;
 
@@ -37,6 +57,15 @@ function close_image() {
     document.getElementById("image-filter").style.display = "none";
     cache.svg = null;
     cache.custom = null;
+
+    grayFilter = false;
+    blurs = 0;
+    colorsFilter = 4;
+
+    buttonInitialState();
+    blurHistory = [];
+    imgWithoutCF = null;
+    imgWithoutCFSet = false;
 }
 
 async function menu_pick_image() {
@@ -49,19 +78,14 @@ async function menu_take_picture() {
     backend('get:camera');
 }
 
-async function applyFilter(filter, params) {
+async function applyFilter(filter, params, updateCache = true) {
     if (!imageData) return;
 
     imageData = filter(imageData, params);
     await set_size_text(mainSizeText, canvas);
     render(imageData);
 
-    if (currentState === STATE.INITIAL) {
-        currentState = STATE.AFTER_FILTER;
-    }
-    updateButtonStates();
-
-    if (currentMode === "custom") {
+    if (currentMode === "custom" && updateCache) {
         cache.custom = saveState();
     }
 }
@@ -69,9 +93,6 @@ async function applyMarchingSquares() {
     if (!imageData) return;
 
     componentPoints = await marching_squares(imageData);
-
-    currentState = STATE.AFTER_MARCHING;
-    updateButtonStates();
 
     if (currentMode === "custom") {
         cache.custom = saveState();
@@ -85,9 +106,6 @@ function applyCountourSimplification(epsilon) {
     draw_contours(simplifiedComponentPoints, ctx);
     //console.log(count_component_points(simplifiedComponentPoints));
     //console.log(count_total_points(simplifiedComponentPoints));
-
-    currentState = STATE.AFTER_SIMPLIFY;
-    updateButtonStates();
 
     if (currentMode === "custom") {
         cache.custom = saveState();
@@ -111,9 +129,6 @@ function generateSVG(curveTolerance){
     };
     img.src = "data:image/svg+xml;base64," + btoa(svgString);
 
-    currentState = STATE.AFTER_SVG;
-    updateButtonStates();
-
     if (currentMode === "custom") {
         cache.custom = saveState();
     }
@@ -121,9 +136,38 @@ function generateSVG(curveTolerance){
 
 async function resetImage() {
     cache.custom = null;
-    await loadImg(200);
-    currentState = STATE.INITIAL;
-    updateButtonStates();
+    await loadImg(resolution);
+    blurs = 0;
+    colorsFilter = 4;
+    grayFilter = false;
+
+    document.getElementById("gray-switch").checked = grayFilter;
+    document.getElementById("colors").value = colorsFilter;
+
+    buttonInitialState();
+    blurHistory = [];
+    imgWithoutCF = null;
+    imgWithoutCFSet = false;
+}
+
+async function requiredFilters() {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+        await applyFilter(merge_small_components, [10]);
+        await applyMarchingSquares();
+        applyCountourSimplification(3);
+        generateSVG(2.0);
+
+        BUTTONSTATE.COLORB = true;
+        BUTTONSTATE.SENDI = false;
+        BUTTONSTATE.REQUIREDF = true;
+
+        updateButton();
+    } finally {
+        isProcessing = false;
+    }
 }
 
 function saveState() {
@@ -166,8 +210,6 @@ function restoreState(state) {
     }
 
     set_size_text_cached(mainSizeText, size);
-
-    updateButtonStates();
 }
 
 async function press_svg() {
@@ -175,13 +217,15 @@ async function press_svg() {
     document.getElementById("img-svg").style.background = "var(--activeCol)";
     document.getElementById("img-custom").style.background = "var(--passiveCol)";
     document.getElementById("custom-buttons-area").style.display = "none";
+    document.getElementById("send-img").disabled = false;
+
 
     if (cache.svg) {
         restoreState(cache.svg);
         return;
     }
 
-    await loadImg(200);
+    await loadImg(resolution);
     await apply_preset_filters();
     cache.svg = saveState();
 }
@@ -223,50 +267,93 @@ async function press_custom() {
     document.getElementById("img-custom").style.background = "var(--activeCol)";
     document.getElementById("custom-buttons-area").style.display = "flex";
 
+    document.getElementById("required-filters").disabled = true;
+
     if (cache.custom) {
         restoreState(cache.custom);
         return;
     }
 
-    await loadImg(200);
+    await loadImg(resolution);
+
     cache.custom = saveState();
+    updateButton();
 }
 
-function updateButtonStates() {
-    const firstFive = [
-        "gray-filter", "gaussian-blur", "bilateral-blur",
-        "quantize-color", "merge-components"
-    ];
-    const marching = document.getElementById("marching-squares");
-    const simplify = document.getElementById("simplify-contours");
-    const svg = document.getElementById("png/svg");
+async function stepBlur(number) {
+    const t0 = performance.now();
+    if (isProcessing) return;
+    isProcessing = true;
 
-    [...firstFive.map(id => document.getElementById(id)), marching, simplify, svg]
-        .forEach(btn => btn.disabled = true);
+    try {
+        if (number === 1) {
+            if (blurs === 10) return;
+            blurHistory.push(cloneImageData(imageData));
+            await applyFilter(bilateral_blur, [3, 40, 7]);
+            blurs++;
 
-    switch (currentState) {
-        case STATE.INITIAL:
-            firstFive.forEach(id => document.getElementById(id).disabled = false);
-            break;
+            BUTTONSTATE.BLURD = blurs === 10;
+            updateButton();
+        } else {
+            if (blurs === 0) {
+                return;
+            }
+            imageData = blurHistory.pop();
+            blurs--;
 
-        case STATE.AFTER_FILTER:
-            firstFive.forEach(id => document.getElementById(id).disabled = false);
-            marching.disabled = false;
-            break;
+            BUTTONSTATE.BLURU = blurs === 0
+            updateButton();
 
-        case STATE.AFTER_MARCHING:
-            marching.disabled = false;
-            simplify.disabled = false;
-            break;
-
-        case STATE.AFTER_SIMPLIFY:
-            simplify.disabled = false
-            svg.disabled = false;
-            break;
-
-        case STATE.AFTER_SVG:
-            break;
+            await set_size_text(mainSizeText, canvas);
+            render(imageData);
+            if (currentMode === "custom") {
+                cache.custom = saveState();
+            }
+        }
+        BUTTONSTATE.COLORB = blurs <= 1;
+        updateButton();
+    } finally {
+        isProcessing =false;
     }
+
+    //console.log(`stepBlur took ${performance.now() - t0}ms, historyLen=${blurHistory.length}`);
+}
+
+async function applyGray(el) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+        grayFilter = el;
+        await rebuildFromScratch();
+    } finally {
+        isProcessing = false;
+    }
+}
+
+async function applyColor(number) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+        if (!imgWithoutCFSet) {
+            imgWithoutCF = cloneImageData(imageData);
+            imgWithoutCFSet = true;
+        }
+        imageData = cloneImageData(imgWithoutCF);
+        colorsFilter = number;
+        await applyFilter(quantize_color, [colorsFilter]);
+    } finally {
+        isProcessing = false;
+    }
+    BUTTONSTATE.GRAYB = true;
+    BUTTONSTATE.BLURD = true;
+    BUTTONSTATE.BLURU = true;
+    BUTTONSTATE.REQUIREDF = false;
+
+    updateButton();
+    blurHistory = [];
+    blurs = 0;
 }
 
 async function getImg() {
@@ -285,9 +372,15 @@ async function getImg() {
 }
 
 async function chat_sendImg() {
+    buttonInitialState();
+    blurHistory = [];
+    blurs = 0;
+    imgWithoutCF = null;
+    imgWithoutCFSet = false;
+
     var img = await getImg()
     if (!img || img.length == 0)
-            return;
+        return;
 
     launch_snackbar("sending image ...")
     setTimeout(function () { // delay sending (and getting location beforehand), allows snackbar to show
@@ -316,11 +409,52 @@ async function chat_sendImg() {
 
         closeOverlay();
         // setTimeout(function () { // let image rendering (fetching size) take place before we scroll
-            let c = document.getElementById('core');
-            c.scrollTop = c.scrollHeight;
+        let c = document.getElementById('core');
+        c.scrollTop = c.scrollHeight;
         // }, 100);
 
         // close image
         close_image();
     }, 100);
+}
+
+function buttonInitialState() {
+    BUTTONSTATE.COLORB = true;
+    BUTTONSTATE.GRAYB = false;
+    BUTTONSTATE.BLURD = false;
+    BUTTONSTATE.BLURU = false;
+    BUTTONSTATE.SENDI = true;
+    BUTTONSTATE.REQUIREDF = true;
+
+    updateButton();
+}
+
+function updateButton() {
+    document.getElementById("colors").disabled = BUTTONSTATE.COLORB;
+    document.getElementById("gray-switch").disabled = BUTTONSTATE.GRAYB;
+    document.getElementById("blurD").disabled = BUTTONSTATE.BLURD;
+    document.getElementById("blurU").disabled = BUTTONSTATE.BLURU;
+    document.getElementById("send-img").disabled = BUTTONSTATE.SENDI;
+    document.getElementById("required-filters").disabled = BUTTONSTATE.REQUIREDF;
+}
+
+async function rebuildFromScratch() {
+    await loadImg(resolution);
+    if (grayFilter) {
+        await applyFilter(gray_scale, [], false);
+    }
+
+    blurHistory = [];
+    for (let i = 0; i < blurs; i++) {
+        blurHistory.push(cloneImageData(imageData));
+        await applyFilter(bilateral_blur, [3, 40, 7], false);
+    }
+
+    if (currentMode === "custom") {
+        cache.custom = saveState();
+    }
+}
+
+function cloneImageData(data) {
+    return new ImageData(new Uint8ClampedArray(data.data), data.width, data.height);
 }
