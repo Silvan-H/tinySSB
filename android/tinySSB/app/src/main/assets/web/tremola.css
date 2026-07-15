@@ -877,4 +877,21 @@ input:checked + .slider:before {
   }
 }
 
+.next-filter {
+  display: none;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.buttons-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dis-button:disabled {
+  opacity: 0;
+}
+
 /* eof */

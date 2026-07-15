@@ -762,30 +762,41 @@
   <footer>
     <div id="custom-buttons-area" class="custom-buttons">
       <div class="custom-buttons-row">
-        <div class="button-label">
-          <label>
-            <span>Colors</span>
-            <input type="range" min="4" max="16" step="1" value="4" id="colors" onchange="applyColor(Number(this.value))">
-          </label>
-        </div>
-        <button id="required-filters" class="filter-btn img-button" onclick="requiredFilters();">Required Filters</button>
-      </div>
-      <div class="custom-buttons-row">
-        <div class="button-label">
-          <span>Gray</span>
-          <label class="switch">
-            <input id="gray-switch" type="checkbox" onchange="applyGray(this.checked)">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <div class="button-label">
-          <span>Blur</span>
-          <div class="range">
-            <button id="blurD" class="w100 flat img-button" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/down.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;" onclick="stepBlur(-1)"></button>
-            <button id="blurU" class="w100 flat img-button" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/up.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;" onclick="stepBlur(1)"></button>
+
+        <div id="first-filter" class="next-filter">
+          <div class="button-label">
+            <span>Gray</span>
+            <label class="switch">
+              <input id="gray-switch" type="checkbox" onchange="applyGray(this.checked)">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="button-label">
+            <span>Blur</span>
+            <div class="range">
+              <button id="blurD" class="w100 flat img-button" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/down.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;" onclick="stepBlur(-1)"></button>
+              <button id="blurU" class="w100 flat img-button" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/up.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;" onclick="stepBlur(1)"></button>
+            </div>
+          </div>
+          <div class="buttons-vertical">
+            <button id="next" class="filter-btn img-button" onclick="pressNext()">Next</button>
+            <button id="reset1" class="filter-btn img-button" onclick="resetImage()">Reset</button>
           </div>
         </div>
-        <button id="reset" class="filter-btn img-button" onclick="resetImage()">Reset</button>
+
+        <div id="second-filter" class="next-filter">
+          <div id="color-cont" class="button-label disable">
+            <label>
+              <span>Colors</span>
+              <input class="dis-button" type="range" min="2" max="8" step="1" value="4" id="colors" onchange="applyColor(Number(this.value))">
+            </label>
+          </div>
+          <div class="buttons-vertical">
+            <button id="finish" class="filter-btn img-button dis-button" onclick="requiredFilters()">Finish</button>
+            <button id="reset2" class="filter-btn img-button" onclick="resetImage()">Reset</button>
+          </div>
+        </div>
+
       </div>
     </div>
 

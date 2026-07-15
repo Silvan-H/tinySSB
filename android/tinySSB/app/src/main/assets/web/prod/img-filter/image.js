@@ -7,7 +7,7 @@ let imgUrl = null;
 let originalSize = null;
 
 let grayFilter = false;
-let blurs = 0;
+let blurs = 2;
 let colorsFilter = 4;
 
 let isProcessing = false;
@@ -25,11 +25,8 @@ const STATE = {
 };
 
 const BUTTONSTATE = {
-    COLORB: true,
-    GRAYB: false,
     BLURU: false,
     BLURD: true,
-    REQUIREDF: true,
     SENDI: true,
 }
 
@@ -64,15 +61,19 @@ async function b2f_new_image_blob(ref) {
     document.getElementById("image-filter").style.display = "flex";
 
     await press_svg();
+    document.getElementById("first-filter").style.display = "flex";
 }
 
 function close_image() {
     document.getElementById("image-filter").style.display = "none";
+    document.getElementById("colors").disabled = false;
+    document.getElementById("finish").disabled = false;
+    document.getElementById("color-cont").style.opacity = "100";
     cache.svg = null;
     cache.custom = null;
 
     grayFilter = false;
-    blurs = 0;
+    blurs = 2;
     colorsFilter = 4;
 
     buttonInitialState();
@@ -150,15 +151,21 @@ function generateSVG(curveTolerance){
 async function resetImage() {
     cache.custom = null;
     await loadImg(settings.MAXSCALE);
-    blurs = 0;
+    await apply2blurs();
     colorsFilter = 4;
     grayFilter = false;
 
     document.getElementById("gray-switch").checked = grayFilter;
     document.getElementById("colors").value = colorsFilter;
+    document.getElementById("first-filter").style.display = "flex";
+    document.getElementById("second-filter").style.display = "none";
+    document.getElementById("colors").disabled = false;
+    document.getElementById("finish").disabled = false;
+    document.getElementById("color-cont").style.opacity = "100";
+
 
     buttonInitialState();
-    blurHistory = [];
+
     imgWithoutCF = null;
     imgWithoutCFSet = false;
 }
@@ -173,14 +180,15 @@ async function requiredFilters() {
         applyContourSimplification(settings.SIMPLIFICATIONFACTOR);
         generateSVG(settings.CURVETHRESHOLD);
 
-        BUTTONSTATE.COLORB = true;
         BUTTONSTATE.SENDI = false;
-        BUTTONSTATE.REQUIREDF = true;
 
         updateButton();
     } finally {
         isProcessing = false;
     }
+    document.getElementById("colors").disabled = true;
+    document.getElementById("finish").disabled = true;
+    document.getElementById("color-cont").style.opacity = "0";
 }
 
 function saveState() {
@@ -286,21 +294,19 @@ async function press_custom() {
     customBtn.style.background = "var(--activeCol)";
     document.getElementById("custom-buttons-area").style.display = "flex";
 
-    document.getElementById("required-filters").disabled = true;
-
     if (cache.custom) {
         restoreState(cache.custom);
         return;
     }
 
     await loadImg(settings.MAXSCALE);
+    await apply2blurs();
 
     cache.custom = saveState();
     updateButton();
 }
 
 async function stepBlur(number) {
-    const t0 = performance.now();
     if (isProcessing) return;
     isProcessing = true;
 
@@ -310,18 +316,12 @@ async function stepBlur(number) {
             blurHistory.push(cloneImageData(imageData));
             await applyFilter(bilateral_blur, [settings.BLURSPATIAL, settings.BLURRANGE, settings.BLURRADIUS]);
             blurs++;
-
-            BUTTONSTATE.BLURD = blurs === 10;
-            updateButton();
         } else {
-            if (blurs === 0) {
+            if (blurs === 2) {
                 return;
             }
             imageData = blurHistory.pop();
             blurs--;
-
-            BUTTONSTATE.BLURU = blurs === 0
-            updateButton();
 
             await set_size_text(mainSizeText, canvas);
             render(imageData);
@@ -329,13 +329,12 @@ async function stepBlur(number) {
                 cache.custom = saveState();
             }
         }
-        BUTTONSTATE.COLORB = blurs <= 1;
+        BUTTONSTATE.BLURU = blurs === 10;
+        BUTTONSTATE.BLURD = blurs === 2
         updateButton();
     } finally {
         isProcessing =false;
     }
-
-    //console.log(`stepBlur took ${performance.now() - t0}ms, historyLen=${blurHistory.length}`);
 }
 
 async function applyGray(el) {
@@ -365,14 +364,10 @@ async function applyColor(number) {
     } finally {
         isProcessing = false;
     }
-    BUTTONSTATE.GRAYB = true;
     BUTTONSTATE.BLURD = true;
     BUTTONSTATE.BLURU = true;
-    BUTTONSTATE.REQUIREDF = false;
 
     updateButton();
-    blurHistory = [];
-    blurs = 0;
 }
 
 async function getImg() {
@@ -392,8 +387,11 @@ async function getImg() {
 
 async function chat_sendImg() {
     buttonInitialState();
+    document.getElementById("colors").disabled = false;
+    document.getElementById("finish").disabled = false;
+    document.getElementById("color-cont").style.opacity = "100";
     blurHistory = [];
-    blurs = 0;
+    blurs = 2;
     imgWithoutCF = null;
     imgWithoutCFSet = false;
 
@@ -438,23 +436,19 @@ async function chat_sendImg() {
 }
 
 function buttonInitialState() {
-    BUTTONSTATE.COLORB = true;
-    BUTTONSTATE.GRAYB = false;
-    BUTTONSTATE.BLURD = false;
+    BUTTONSTATE.BLURD = true;
     BUTTONSTATE.BLURU = false;
     BUTTONSTATE.SENDI = true;
-    BUTTONSTATE.REQUIREDF = true;
+    document.getElementById("second-filter").style.display = "none";
+    document.getElementById("colors").value = 4;
 
     updateButton();
 }
 
 function updateButton() {
-    document.getElementById("colors").disabled = BUTTONSTATE.COLORB;
-    document.getElementById("gray-switch").disabled = BUTTONSTATE.GRAYB;
     document.getElementById("blurD").disabled = BUTTONSTATE.BLURD;
     document.getElementById("blurU").disabled = BUTTONSTATE.BLURU;
     document.getElementById("send-img").disabled = BUTTONSTATE.SENDI;
-    document.getElementById("required-filters").disabled = BUTTONSTATE.REQUIREDF;
 }
 
 async function rebuildFromScratch() {
@@ -476,4 +470,16 @@ async function rebuildFromScratch() {
 
 function cloneImageData(data) {
     return new ImageData(new Uint8ClampedArray(data.data), data.width, data.height);
+}
+
+function pressNext() {
+    document.getElementById("first-filter").style.display = "none";
+    document.getElementById("second-filter").style.display = "flex";
+}
+
+async function apply2blurs() {
+    blurHistory = [];
+    blurs = 2;
+    await applyFilter(bilateral_blur, [3, 40, 7], false);
+    await applyFilter(bilateral_blur, [3, 40, 7], false);
 }
