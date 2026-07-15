@@ -1,5 +1,8 @@
 "use strict";
 
+const imgLoader = document.getElementById("img-loader");
+const customBtn = document.getElementById("img-custom");
+
 let imgUrl = null;
 let originalSize = null;
 let resolution = 200;
@@ -215,7 +218,7 @@ function restoreState(state) {
 async function press_svg() {
     currentMode = "svg";
     document.getElementById("img-svg").style.background = "var(--activeCol)";
-    document.getElementById("img-custom").style.background = "var(--passiveCol)";
+    customBtn.style.background = "var(--passiveCol)";
     document.getElementById("custom-buttons-area").style.display = "none";
     document.getElementById("send-img").disabled = false;
 
@@ -231,6 +234,9 @@ async function press_svg() {
 }
 
 async function apply_preset_filters() {
+    canvas.style.display = "none";
+    imgLoader.style.display = "block";
+    customBtn.disabled = true;
     let previousSize = await getCanvasFileSize(canvas);
     const minReduction = 0.08;
     const maxIterations = 10;
@@ -259,12 +265,15 @@ async function apply_preset_filters() {
     await applyMarchingSquares();
     applyCountourSimplification(3);
     generateSVG(2.0);
+    canvas.style.display = "block";
+    imgLoader.style.display = "none";
+    customBtn.disabled = false;
 }
 
 async function press_custom() {
     currentMode = "custom";
     document.getElementById("img-svg").style.background = "var(--passiveCol)";
-    document.getElementById("img-custom").style.background = "var(--activeCol)";
+    customBtn.style.background = "var(--activeCol)";
     document.getElementById("custom-buttons-area").style.display = "flex";
 
     document.getElementById("required-filters").disabled = true;
