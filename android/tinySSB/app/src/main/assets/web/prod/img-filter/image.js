@@ -135,7 +135,6 @@ function generateSVG(curveTolerance){
     } else {
         svgString = build_svg(simplifiedComponentPoints, curveTolerance);
     }
-
     const img = new Image();
     img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -260,6 +259,7 @@ async function apply_preset_filters() {
     const maxIterations = 10;
 
     for (let i = 0; i < maxIterations; i++) {
+
         await applyFilter(bilateral_blur, [settings.BLURSPATIAL, settings.BLURRANGE, settings.BLURRADIUS]);
 
         const currentSize = await getCanvasFileSize(canvas);
@@ -293,6 +293,10 @@ async function press_custom() {
     document.getElementById("img-svg").style.background = "var(--passiveCol)";
     customBtn.style.background = "var(--activeCol)";
     document.getElementById("custom-buttons-area").style.display = "flex";
+
+    document.getElementById("colors").addEventListener("change", e => {
+            document.getElementById("custom-colors-value").textContent = e.target.value;
+        });
 
     if (cache.custom) {
         restoreState(cache.custom);
@@ -482,4 +486,34 @@ async function apply2blurs() {
     blurs = 2;
     await applyFilter(bilateral_blur, [3, 40, 7], false);
     await applyFilter(bilateral_blur, [3, 40, 7], false);
+}
+
+function add_settings_event_listeners() {
+    document.getElementById("colors-input").addEventListener("change", e => {
+        settings.COLORS = Number(e.target.value);
+        document.getElementById("colors-value").textContent = e.target.value;
+    });
+
+    document.getElementById("simplification-input").addEventListener("input", e => {
+        settings.SIMPLIFICATIONFACTOR = Number(e.target.value);
+        document.getElementById("simplification-value").textContent = e.target.value;
+    });
+}
+
+function open_img_settings() {
+     add_settings_event_listeners();
+     document.getElementById('img-settings-container').style.display = 'flex';
+     document.getElementById('overlay-bg').style.display = 'initial';
+}
+
+async function update_canvas() {
+    if (!canvas) return;
+
+    if (currentMode == "svg") {
+        cache.svg = null;
+        await loadImg(settings.MAXSCALE);
+        await apply_preset_filters();
+    } else {
+        await resetImage();
+    }
 }

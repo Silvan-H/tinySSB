@@ -654,7 +654,7 @@ input:checked + .slider:before {
   display: none;
   background-color: var(--menuBackground);
   flex-direction: column;
-  z-index: 1000;
+  z-index: 10;
 }
 
 .box-top {
@@ -781,43 +781,6 @@ input:checked + .slider:before {
   gap: 8px;
 }
 
-#colors {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-}
-#colors::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  background: var(--neutralCol);
-  border-radius: 999px;
-}
-
-#colors::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--activeCol);
-  margin-top: -6px;
-  cursor: pointer;
-}
-
-.range {
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-
-#colors:disabled {
-  background-color: #f3f4f6;
-  color: #9ca3af;
-  border-color: #e5e7eb;
-  box-shadow: none;
-  opacity: 0.6;
-}
-
 #send-img:disabled {
   background-color: #f3f4f6;
   color: #9ca3af;
@@ -892,6 +855,83 @@ input:checked + .slider:before {
 
 .dis-button:disabled {
   opacity: 0;
+}
+
+#img-settings-container {
+  position: fixed;
+  padding: 1rem;
+  top: 14vw; left: 0;
+  width: 100%; height: 25%;
+  display: none;
+  background-color: var(--menuBackground);
+  flex-direction: column;
+  z-index: 10000;
+}
+
+#img-settings-vbox {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    gap: 1rem;
+}
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.range-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: var(--neutralCol);
+  border-radius: 999px;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+
+  border-radius: 50%;
+  background: var(--activeCol);
+
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.range-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: var(--neutralCol);
+  border-radius: 999px;
+}
+
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+
+  border-radius: 50%;
+  border: none;
+  background: var(--activeCol);
+
+  cursor: pointer;
 }
 
 /* eof */

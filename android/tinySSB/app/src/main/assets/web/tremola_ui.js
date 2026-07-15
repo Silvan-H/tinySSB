@@ -323,12 +323,16 @@ function closeOverlay() {
     document.getElementById('div:debug').style.display = 'none'
     document.getElementById("div:invite_menu").style.display = 'none'
 
+    // image-compression overlays
+    document.getElementById('img-settings-container').style.display = 'none'
+
     overlayIsActive = false;
 
     if (curr_img_candidate != null) {
         backend('del:blob ' + curr_img_candidate);
         curr_img_candidate = null;
     }
+    update_canvas();
 }
 
 function showPreview() {

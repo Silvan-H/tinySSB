@@ -750,7 +750,10 @@
     <span id="image-size-display">
     0.00 KB
   </span>
-    <button id="send-img" class="flat passive buttontext img-button" onclick="chat_sendImg()" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/send.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;"></button>
+      <div>
+          <button id="settings-img" class="flat passive buttontext img-button" onclick="open_img_settings()" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/settings.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;"></button>
+          <button id="send-img" class="flat passive buttontext img-button" onclick="chat_sendImg()" style="transition: all 0.15s ease; width: 50px; height: 50px; margin-bottom: 4px; background-image: url('img/send.svg'); background-repeat: no-repeat; background-position: center; background-size: 24px;"></button>
+      </div>
   </header>
 
   <main class="box-middle">
@@ -787,8 +790,11 @@
         <div id="second-filter" class="next-filter">
           <div id="color-cont" class="button-label disable">
             <label>
-              <span>Colors</span>
-              <input class="dis-button" type="range" min="2" max="8" step="1" value="4" id="colors" onchange="applyColor(Number(this.value))">
+                <div class="range">
+                    <span>Colors</span>
+                    <input class="range-slider dis-button" type="range" min="2" max="8" step="1" value="4" id="colors" onchange="applyColor(Number(this.value))">
+                    <span id="custom-colors-value">4</span>
+                </div>
             </label>
           </div>
           <div class="buttons-vertical">
@@ -802,11 +808,31 @@
 
     <div class="box-bottom">
       <table width=100% cellpadding="2px"><tr>
-        <td width=50.0%><button id='img-svg' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_svg();">SVG</button>
+        <td width=50.0%><button id='img-svg' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_svg();">Preset</button>
         <td width=50.0%><button id='img-custom' class="w100 flat img-button" style="transition: all 0.15s ease;" onclick="press_custom();">Custom</button>
       </table>
     </div>
   </footer>
+</div>
+
+<div id="img-settings-container">
+    <div id="img-settings-vbox">
+    <label>
+        <div class="range">
+        Colors:
+        <input id="colors-input" class="range-slider dis-button" type="range" min="2" max="8" value="4">
+        <span id="colors-value">4</span>
+        </div>
+    </label>
+
+    <label>
+        <div class="range">
+        Simplification:
+        <input id="simplification-input" class="range-slider dis-button" type="range" min="0" max="10" value="3">
+        <span id="simplification-value">3</span>
+        </div>
+    </label>
+    </div>
 </div>
 
 </body>
