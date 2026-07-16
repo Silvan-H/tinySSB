@@ -248,7 +248,6 @@ async function press_svg() {
 
     await loadImg(settings.MAXSCALE);
     await apply_preset_filters();
-    cache.svg = saveState();
 }
 
 async function apply_preset_filters() {
@@ -284,6 +283,7 @@ async function apply_preset_filters() {
     await applyMarchingSquares();
     applyContourSimplification(settings.SIMPLIFICATIONFACTOR);
     generateSVG(settings.CURVETHRESHOLD);
+    cache.svg = saveState();
     canvas.style.display = "block";
     imgLoader.style.display = "none";
     customBtn.disabled = false;
