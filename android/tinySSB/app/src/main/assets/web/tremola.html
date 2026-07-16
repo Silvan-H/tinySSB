@@ -817,29 +817,32 @@
 
 <div id="img-settings-container">
     <div id="img-settings-vbox">
-    <label>
-        <div class="range">
-        Colors:
-        <input id="colors-input" class="range-slider dis-button" type="range" min="2" max="8" value="4">
-        <span id="colors-value">4</span>
-        </div>
-    </label>
+        <div>
+            <label>
+                <div class="range">
+                Colors:
+                <input id="colors-input" class="range-slider dis-button" type="range" min="2" max="8" value="4">
+                <span id="colors-value">4</span>
+                </div>
+            </label>
 
-    <label>
-        <div class="range">
-        Simplification:
-        <input id="simplification-input" class="range-slider dis-button" type="range" min="0" max="10" value="3">
-        <span id="simplification-value">3</span>
-        </div>
-    </label>
+            <label>
+                <div class="range">
+                Simplification:
+                <input id="simplification-input" class="range-slider dis-button" type="range" min="0" max="10" value="3">
+                <span id="simplification-value">3</span>
+                </div>
+            </label>
 
-      <label>
-        <div class="range">
-          Minimum Pixel Area:
-          <input id="component-input" class="range-slider dis-button" type="range" min="0" max="20" value="10">
-          <span id="component-value">3</span>
+              <label>
+                <div class="range">
+                  Minimum Pixel Area:
+                  <input id="component-input" class="range-slider dis-button" type="range" min="0" max="20" value="10">
+                  <span id="component-value">3</span>
+                </div>
+              </label>
         </div>
-      </label>
+        <button class="filter-btn img-button" onclick="update_canvas()">Apply Settings</button>
     </div>
 </div>
 

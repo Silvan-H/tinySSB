@@ -332,7 +332,6 @@ function closeOverlay() {
         backend('del:blob ' + curr_img_candidate);
         curr_img_candidate = null;
     }
-    update_canvas();
 }
 
 function showPreview() {

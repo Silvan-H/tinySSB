@@ -516,6 +516,7 @@ function open_img_settings() {
 async function update_canvas() {
     if (!canvas) return;
 
+    closeOverlay();
     if (currentMode === "svg") {
         cache.svg = null;
         await loadImg(settings.MAXSCALE);
