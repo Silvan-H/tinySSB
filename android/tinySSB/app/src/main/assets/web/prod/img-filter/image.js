@@ -152,11 +152,11 @@ async function resetImage() {
     cache.custom = null;
     await loadImg(settings.MAXSCALE);
     await apply2blurs();
-    colorsFilter = 4;
+    colorsFilter = settings.COLORS;
     grayFilter = false;
 
     document.getElementById("gray-switch").checked = grayFilter;
-    document.getElementById("colors").value = colorsFilter;
+    document.getElementById("colors").value = settings.COLORS;
     document.getElementById("first-filter").style.display = "flex";
     document.getElementById("second-filter").style.display = "none";
     document.getElementById("colors").disabled = false;
@@ -445,7 +445,7 @@ function buttonInitialState() {
     BUTTONSTATE.BLURU = false;
     BUTTONSTATE.SENDI = true;
     document.getElementById("second-filter").style.display = "none";
-    document.getElementById("colors").value = 4;
+    document.getElementById("colors").value = settings.COLORS;
 
     updateButton();
 }
@@ -477,10 +477,11 @@ function cloneImageData(data) {
     return new ImageData(new Uint8ClampedArray(data.data), data.width, data.height);
 }
 
-function pressNext() {
+async function pressNext() {
     document.getElementById("first-filter").style.display = "none";
     document.getElementById("second-filter").style.display = "flex";
-    applyColor(colorsFilter);
+    document.getElementById("custom-colors-value").textContent = colorsFilter;
+    await applyColor(colorsFilter);
 }
 
 async function apply2blurs() {
@@ -494,6 +495,8 @@ function add_settings_event_listeners() {
     document.getElementById("colors-input").addEventListener("change", e => {
         settings.COLORS = Number(e.target.value);
         document.getElementById("colors-value").textContent = e.target.value;
+        colorsFilter = settings.COLORS;
+        document.getElementById("colors").value = colorsFilter;
     });
 
     document.getElementById("simplification-input").addEventListener("change", e => {
